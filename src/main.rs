@@ -1,5 +1,7 @@
+use std::io::prelude::*;
+
 #[allow(unused_imports)]
-use std::net::TcpListener;
+use std::net::{ TcpListener, TcpStream };
 
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -8,14 +10,25 @@ fn main() {
     // Uncomment this block to pass the first stage
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
 
-    for stream in listener.incoming() {
+    listener.incoming().for_each(|stream| {
         match stream {
-            Ok(_stream) => {
+            Ok(mut stream) => {
                 println!("accepted new connection");
+                write_header(&mut stream).unwrap()
+
             }
             Err(e) => {
                 println!("error: {}", e);
             }
         }
-    }
+    })
+}
+
+fn write_header(stream: &mut TcpStream) -> std::io::Result<()> {
+    match stream.write(b"HTTP/1.1 200 OK\r\n\r\n") {
+        Ok(bytes_written) => println!("Bytes written: {}", bytes_written),
+        Err(e) => return Err(e)
+    };
+
+    Ok(())
 }
