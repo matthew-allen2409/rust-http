@@ -16,11 +16,11 @@ pub fn handle_connection(mut stream: TcpStream) {
             Ok(n) => {
                 request_string.push_str(&String::from_utf8_lossy(&buf[..n]));
             }
-            Err(err) if err.kind() == WouldBlock => {
+            Err(e) if e.kind() == WouldBlock => {
                 break;
             }
-            Err(err) => {
-                panic!("{err}");
+            Err(e) => {
+                panic!("{e}");
             }
         };
     }
