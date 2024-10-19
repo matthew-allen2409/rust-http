@@ -32,7 +32,7 @@ impl Request {
         loop {
             let line = lines.next().unwrap();
             if line.is_empty() {
-                break
+                break;
             }
 
             let mut header = line.splitn(2, ":");
