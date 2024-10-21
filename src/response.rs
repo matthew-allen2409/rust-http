@@ -10,7 +10,7 @@ pub struct StatusLine {
 impl StatusLine {
     pub fn to_string(&self) -> String {
         format!(
-            "{} {} {}\r\n\r\n",
+            "{} {} {}\r\n",
             self.version, self.status_code, self.status_text,
         )
     }
