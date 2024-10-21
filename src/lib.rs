@@ -2,6 +2,7 @@ pub mod handler;
 pub mod request;
 pub mod response;
 pub mod router;
+pub mod trie_tree;
 
 #[derive(Debug)]
 pub enum HttpMethod {
@@ -18,6 +19,21 @@ pub enum HttpMethod {
 
 #[derive(Debug)]
 pub struct Header {
-    pub name: String, // Should be case-insensitive
-    pub value: String, // Should this be String?
+    pub name: Box<str>,
+    pub value: Box<str>,
 }
+
+impl Header {
+    pub fn new(name: Box<str>, value: Box<str>) -> Self {
+        Self {
+            name,
+            value,
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        format!("{}: {}\r\n", self.name, self.value)
+    }
+}
+
+pub type Handler = fn(Vec<String>) -> response::Response;

@@ -1,9 +1,10 @@
 use crate::request::Request;
+use crate::router::Router;
 use std::io::{prelude::*, ErrorKind::WouldBlock};
 use std::net::TcpStream;
-use crate::router::handle_route;
+use std::sync::Arc;
 
-pub fn handle_connection(mut stream: TcpStream) {
+pub fn handle_connection(mut stream: TcpStream, router: Arc<Router>) {
     let mut buf = [0u8; 4096];
     let mut request_string = String::new();
 
@@ -16,7 +17,7 @@ pub fn handle_connection(mut stream: TcpStream) {
             Ok(n) => {
                 request_string.push_str(&String::from_utf8_lossy(&buf[..n]));
             }
-            Err(e) if e.kind() == WouldBlock && !request_string.is_empty()=> {
+            Err(e) if e.kind() == WouldBlock && !request_string.is_empty() => {
                 break;
             }
             Err(e) => {
@@ -25,11 +26,11 @@ pub fn handle_connection(mut stream: TcpStream) {
         };
     }
 
-    println!("Request_string: {}", &request_string);
-
     let request = Request::from_string(&mut request_string);
+    let response = router.handle_route(request.request_line.target.to_string());
 
-    let response = handle_route(request.request_line.target);
+    let response_string = response.to_string();
 
-    stream.write(response.to_string().as_bytes()).unwrap();
+    println!("{}", &response_string);
+    stream.write(response_string.as_bytes()).unwrap();
 }
