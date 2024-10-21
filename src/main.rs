@@ -22,9 +22,7 @@ fn main() {
             let stream = stream.unwrap();
             stream.set_nonblocking(true).unwrap();
             handle_connection(stream, router);
-        })
-        .join()
-        .unwrap_or_else(|_e| eprintln!("thread died"));
+        });
     })
 }
 
