@@ -1,6 +1,6 @@
 use crate::response::{Response, StatusLine};
-use crate::Headers;
 use crate::Handler;
+use crate::Headers;
 use std::collections::{BTreeMap, VecDeque};
 use std::sync::Arc;
 
@@ -62,7 +62,12 @@ impl PathNode {
         self.find(path, Vec::new(), headers)
     }
 
-    fn find(&self, mut path: VecDeque<String>, mut arg_acc: Vec<String>, headers: Headers) -> Response {
+    fn find(
+        &self,
+        mut path: VecDeque<String>,
+        mut arg_acc: Vec<String>,
+        headers: Headers,
+    ) -> Response {
         let path_element = match path.pop_front() {
             Some(element) => element,
             None => {
@@ -96,7 +101,6 @@ fn handle_not_found() -> Response {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -115,7 +119,6 @@ mod tests {
             body: None,
         }
     }
-
 
     #[test]
     fn new_expect_default_trie_node() {
