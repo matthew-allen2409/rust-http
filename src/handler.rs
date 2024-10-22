@@ -27,7 +27,7 @@ pub fn handle_connection(mut stream: TcpStream, router: Arc<Router>) {
     }
 
     let request = Request::from_string(&mut request_string);
-    let response = router.handle_route(request.request_line.target.to_string());
+    let response = router.handle_route(request.request_line.target.to_string(), request.headers);
 
     let response_string = response.to_string();
 

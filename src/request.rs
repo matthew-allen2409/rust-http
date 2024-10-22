@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use crate::Headers;
 
 #[derive(Debug)]
 pub struct RequestLine {
@@ -10,13 +10,13 @@ pub struct RequestLine {
 #[derive(Debug)]
 pub struct Request {
     pub request_line: RequestLine,
-    pub headers: HashMap<Box<str>, Box<str>>,
+    pub headers: Headers,
     pub body: Option<String>,
 }
 
 impl Request {
     pub fn from_string(request_string: &mut String) -> Request {
-        let mut headers = HashMap::<Box<str>, Box<str>>::new();
+        let mut headers = Headers::new();
 
         let mut lines = request_string.lines();
         let mut request_line = lines.next().unwrap().split_whitespace();

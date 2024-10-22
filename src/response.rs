@@ -1,6 +1,6 @@
 use crate::Header;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct StatusLine {
     pub version: Box<str>,
     pub status_code: u16,
@@ -8,6 +8,14 @@ pub struct StatusLine {
 }
 
 impl StatusLine {
+    pub fn new(status_code: u16, status_text: Box<str>) -> Self {
+        Self {
+            version: Box::from("HTTP/1.1"),
+            status_code,
+            status_text,
+        }
+    }
+
     pub fn to_string(&self) -> String {
         format!(
             "{} {} {}\r\n",
@@ -16,7 +24,7 @@ impl StatusLine {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Response {
     pub status_line: StatusLine,
     pub headers: Vec<Header>,
@@ -24,6 +32,14 @@ pub struct Response {
 }
 
 impl Response {
+    pub fn new(status_line: StatusLine, headers: Vec<Header>, body: Option<Box<str>>) -> Response {
+        Response {
+            status_line,
+            headers,
+            body,
+        }
+    }
+
     pub fn to_string(&self) -> String {
         let status_line_string = self.status_line.to_string();
 
