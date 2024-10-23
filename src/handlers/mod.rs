@@ -49,7 +49,16 @@ pub fn user_agent(_: Vec<String>, mut headers: Headers, _: &ApplicationState) ->
 
 
 pub fn fetch_file(args: Vec<String>, _: Headers, state: &ApplicationState) -> Response {
-    let mut file_path = state.dir.clone();
+    let mut file_path = match &state.dir {
+        Some(path) => path.clone(),
+        None => {
+            return Response::new(
+                StatusLine::new(404, "Not Found".into()),
+                vec![],
+                None,
+            )
+        }
+    };
     file_path.push_str(&format!("/{}", args.get(0).unwrap()));
 
     let body = match fs::read_to_string(&file_path) {

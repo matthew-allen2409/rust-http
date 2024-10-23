@@ -9,21 +9,18 @@ use std::thread;
 mod handlers;
 
 struct ApplicationState {
-    dir: String,
+    dir: Option<String>,
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let file_dir = match args.iter().position(|arg|arg.eq("--directory")) {
-        Some(i) => match args.get(i + 1) {
-            Some(dir) => dir,
-            None => panic!("Please pass a directory")
-        }
-        None => panic!("Please pass in a directory")
+        Some(i) => args.get(i + 1),
+        None => None
     };
 
     let state = ApplicationState {
-        dir: file_dir.to_string(),
+        dir: file_dir.cloned(),
     };
 
     let address = "localhost:4221";
