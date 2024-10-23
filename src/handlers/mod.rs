@@ -66,7 +66,7 @@ pub fn fetch_file(args: Vec<String>, _: Headers, state: &ApplicationState) -> Re
     let content_length = format!("{}", body.len());
 
     let headers = vec![
-        Header::new("Content-Type".into(), "octet-stream".into()),
+        Header::new("Content-Type".into(), "application/octet-stream".into()),
         Header::new("Content-Length".into(), content_length.into())
     ];
 
