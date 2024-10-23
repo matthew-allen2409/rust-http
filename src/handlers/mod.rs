@@ -50,7 +50,7 @@ pub fn user_agent(_: Vec<String>, mut headers: Headers, _: &ApplicationState) ->
 
 pub fn fetch_file(args: Vec<String>, _: Headers, state: &ApplicationState) -> Response {
     let mut file_path = state.dir.clone();
-    file_path.push_str(args.get(0).unwrap());
+    file_path.push_str(&format!("/{}", args.get(0).unwrap()));
 
     let body = match fs::read_to_string(&file_path) {
         Ok(body) => body,
