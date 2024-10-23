@@ -1,22 +1,25 @@
 use crate::response::{Response, StatusLine};
-use crate::Handler;
 use crate::Headers;
 use std::collections::{BTreeMap, VecDeque};
 use std::sync::Arc;
 
+pub type Handler<T> = fn(Vec<String>, Headers, &T) -> crate::response::Response;
+
 #[derive(Debug)]
-pub struct Router {
-    pub routes: PathNode,
+pub struct Router<T> {
+    pub routes: PathNode<T>,
+    pub state: T,
 }
 
-impl Router {
-    pub fn new() -> Self {
+impl<T> Router<T> {
+    pub fn new(state: T) -> Self {
         Self {
             routes: PathNode::new(),
+            state,
         }
     }
 
-    pub fn add_route(mut self, route: &str, handler: Handler) -> Self {
+    pub fn add_route(mut self, route: &str, handler: Handler<T>) -> Self {
         let path_vec: VecDeque<String> = route.split("/").map(str::to_string).collect();
         self.routes.add_route(path_vec, handler);
         self
@@ -24,25 +27,27 @@ impl Router {
 
     pub fn handle_route(&self, route: String, headers: Headers) -> Response {
         let path = route.split("/").map(String::from).collect();
-        self.routes.handle(path, headers)
+        self.routes.handle(path, &self.state, headers)
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct PathNode {
-    pub children: BTreeMap<String, PathNode>,
-    pub handler: Option<Arc<Handler>>,
+pub struct PathNode<T> {
+    pub children: BTreeMap<String, PathNode<T>>,
+    pub handler: Option<Arc<Handler<T>>>,
+    pub options: Option<T>,
 }
 
-impl PathNode {
+impl<T> PathNode<T> {
     pub fn new() -> Self {
         Self {
             children: BTreeMap::new(),
             handler: None,
+            options: None,
         }
     }
 
-    pub fn add_route(&mut self, mut path: VecDeque<String>, handler: Handler) {
+    pub fn add_route(&mut self, mut path: VecDeque<String>, handler: Handler<T>) {
         let path_element = match path.pop_front() {
             Some(element) => element,
             None => {
@@ -51,20 +56,21 @@ impl PathNode {
             }
         };
 
-        let child: &mut PathNode = match self.children.get_mut(&path_element) {
+        let child: &mut PathNode<T> = match self.children.get_mut(&path_element) {
             Some(child) => child,
             None => &mut self.children.entry(path_element).or_insert(PathNode::new()),
         };
         child.add_route(path, handler);
     }
 
-    pub fn handle(&self, path: VecDeque<String>, headers: Headers) -> Response {
-        self.find(path, Vec::new(), headers)
+    pub fn handle(&self, path: VecDeque<String>, state: &T, headers: Headers) -> Response {
+        self.find(path, state, Vec::new(), headers)
     }
 
     fn find(
         &self,
         mut path: VecDeque<String>,
+        state: &T,
         mut arg_acc: Vec<String>,
         headers: Headers,
     ) -> Response {
@@ -72,17 +78,20 @@ impl PathNode {
             Some(element) => element,
             None => {
                 return match &self.handler {
-                    Some(handler) => handler(arg_acc, headers),
+                    Some(handler) => handler(arg_acc, headers, state),
                     None => handle_not_found(),
                 }
             }
         };
 
         return match self.children.get(&path_element) {
-            Some(child) => child.find(path, arg_acc, headers),
+            Some(child) => child.find(path, state, arg_acc, headers),
             None if self.children.contains_key("*") => {
                 arg_acc.push(path_element);
-                self.children.get("*").unwrap().find(path, arg_acc, headers)
+                self.children
+                    .get("*")
+                    .unwrap()
+                    .find(path, state, arg_acc, headers)
             }
             None => handle_not_found(),
         };
@@ -108,7 +117,7 @@ mod tests {
     use std::collections::VecDeque;
 
     const DUMMY_HEADERS: Headers = Headers::new();
-    fn dummy(_: Vec<String>, _: Headers) -> Response {
+    fn dummy(_: Vec<String>, _: Headers, _: &String) -> Response {
         Response {
             status_line: StatusLine {
                 version: Box::from(""),
@@ -122,9 +131,10 @@ mod tests {
 
     #[test]
     fn new_expect_default_trie_node() {
-        let expected = PathNode {
+        let expected = PathNode::<String> {
             children: BTreeMap::new(),
             handler: None,
+            options: None,
         };
 
         let result = PathNode::new();
@@ -136,9 +146,10 @@ mod tests {
     fn add_root_expect_root_handler() {
         let path = VecDeque::new();
 
-        let expected = PathNode {
+        let expected = PathNode::<String> {
             children: BTreeMap::new(),
             handler: Some(Arc::new(dummy)),
+            options: None,
         };
 
         let mut result = PathNode::new();
@@ -151,17 +162,20 @@ mod tests {
     fn add_expect_correct_tree() {
         let path = VecDeque::from(["echo".to_string(), "hello".to_string()]);
 
-        let hello = PathNode {
+        let hello = PathNode::<String> {
             children: BTreeMap::new(),
             handler: Some(Arc::new(dummy)),
+            options: None,
         };
-        let echo = PathNode {
+        let echo = PathNode::<String> {
             children: BTreeMap::from([("hello".to_string(), hello)]),
             handler: None,
+            options: None,
         };
-        let expected = PathNode {
+        let expected = PathNode::<String> {
             children: BTreeMap::from([("echo".to_string(), echo)]),
             handler: None,
+            options: None,
         };
 
         let mut result = PathNode::new();
@@ -172,35 +186,39 @@ mod tests {
 
     #[test]
     fn hanlde_root_inserted_expect_handler() {
-        let tree = PathNode {
+        let tree = PathNode::<String> {
             children: BTreeMap::new(),
             handler: Some(Arc::new(dummy)),
+            options: None,
         };
         let path = VecDeque::new();
-        let result = tree.handle(path, DUMMY_HEADERS);
+        let result = tree.handle(path, &"foo".to_string(), DUMMY_HEADERS);
 
-        assert_eq!(dummy(vec![], Headers::new()), result);
+        assert_eq!(dummy(vec![], Headers::new(), &String::from("foo")), result);
     }
 
     #[test]
     fn handle_path_inserted_expect_handler() {
         let path = VecDeque::from(["echo".to_string(), "hello".to_string()]);
 
-        let hello = PathNode {
+        let hello = PathNode::<String> {
             children: BTreeMap::new(),
             handler: Some(Arc::new(dummy)),
+            options: None,
         };
-        let echo = PathNode {
+        let echo = PathNode::<String> {
             children: BTreeMap::from([("hello".to_string(), hello)]),
             handler: None,
+            options: None,
         };
-        let tree = PathNode {
+        let tree = PathNode::<String> {
             children: BTreeMap::from([("echo".to_string(), echo)]),
             handler: None,
+            options: None,
         };
 
-        let result = tree.handle(path, DUMMY_HEADERS);
+        let result = tree.handle(path, &String::from("foo"), DUMMY_HEADERS);
 
-        assert_eq!(dummy(vec![], Headers::new()), result);
+        assert_eq!(dummy(vec![], Headers::new(), &String::from("foo")), result);
     }
 }

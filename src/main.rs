@@ -1,19 +1,38 @@
 use codecrafters_http_server::handler::handle_connection;
 use codecrafters_http_server::router::Router;
-use handlers::{handle_echo, handle_root, user_agent};
+use handlers::{handle_echo, handle_root, user_agent, fetch_file};
+use std::env;
 use std::net::TcpListener;
 use std::sync::Arc;
 use std::thread;
 
 mod handlers;
 
+struct ApplicationState {
+    dir: String,
+}
+
 fn main() {
+    let args: Vec<String> = env::args().collect();
+    let file_dir = match args.iter().skip(1).position(|arg|arg.eq("--directory")) {
+        Some(i) => match args.get(i + 1) {
+            Some(dir) => dir,
+            None => panic!("Please pass a directory")
+        }
+        None => panic!("Please pass in a directory")
+    };
+
+    let state = ApplicationState {
+        dir: file_dir.to_string(),
+    };
+
     let address = "localhost:4221";
     let router = Arc::new(
-        Router::new()
+        Router::new(state)
             .add_route("/", handle_root)
             .add_route("/echo/*", handle_echo)
-            .add_route("/user-agent", user_agent),
+            .add_route("/user-agent", user_agent)
+            .add_route("/files/*", fetch_file),
     );
     let listener = TcpListener::bind(address).unwrap();
     println!("listening on: {address}");

@@ -34,5 +34,4 @@ impl Header {
     }
 }
 
-pub type Handler = fn(Vec<String>, Headers) -> response::Response;
 pub type Headers = BTreeMap<Box<str>, Box<str>>;

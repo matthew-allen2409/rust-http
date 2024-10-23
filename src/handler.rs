@@ -4,7 +4,7 @@ use std::io::{prelude::*, ErrorKind::WouldBlock};
 use std::net::TcpStream;
 use std::sync::Arc;
 
-pub fn handle_connection(mut stream: TcpStream, router: Arc<Router>) {
+pub fn handle_connection<T>(mut stream: TcpStream, router: Arc<Router<T>>) {
     let mut buf = [0u8; 4096];
     let mut request_string = String::new();
 
