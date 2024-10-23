@@ -14,7 +14,7 @@ struct ApplicationState {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let file_dir = match args.iter().skip(1).position(|arg|arg.eq("--directory")) {
+    let file_dir = match args.iter().position(|arg|arg.eq("--directory")) {
         Some(i) => match args.get(i + 1) {
             Some(dir) => dir,
             None => panic!("Please pass a directory")
