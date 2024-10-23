@@ -56,7 +56,7 @@ pub fn fetch_file(args: Vec<String>, _: Headers, state: &ApplicationState) -> Re
         Ok(body) => body,
         Err(_) => {
             return Response::new(
-                StatusLine::new(404, format!("File not found: {}", &file_path).into()),
+                StatusLine::new(404, "Not Found".into()),
                 vec![],
                 None,
             )
