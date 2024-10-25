@@ -8,6 +8,7 @@ pub fn handle_connection<T>(mut stream: TcpStream, router: Arc<Router<T>>) {
     let mut buf = [0u8; 4096];
     let mut request_string = String::new();
 
+    // TODO: Actually parse this correctly
     loop {
         match stream.read(&mut buf) {
             Ok(0) => {
@@ -27,10 +28,9 @@ pub fn handle_connection<T>(mut stream: TcpStream, router: Arc<Router<T>>) {
     }
 
     let request = Request::from_string(&mut request_string);
-    let response = router.handle_route(request.request_line.target.to_string(), request.headers);
+    let response = router.handle(request.expect("TODO"));
 
     let response_string = response.to_string();
 
-    println!("{}", &response_string);
     stream.write(response_string.as_bytes()).unwrap();
 }

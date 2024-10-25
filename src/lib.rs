@@ -5,7 +5,7 @@ pub mod request;
 pub mod response;
 pub mod router;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub enum HttpMethod {
     GET,
     HEAD,
@@ -16,6 +16,23 @@ pub enum HttpMethod {
     OPTION,
     TRACE,
     PATCH,
+}
+
+impl HttpMethod {
+    pub fn from(str: &str) -> Option<HttpMethod> {
+        match str {
+            "GET" => Some(HttpMethod::GET),
+            "HEAD" => Some(HttpMethod::HEAD),
+            "POST" => Some(HttpMethod::POST),
+            "PUT" => Some(HttpMethod::PUT),
+            "DELETE" => Some(HttpMethod::GET),
+            "CONNECT" => Some(HttpMethod::GET),
+            "OPTION" => Some(HttpMethod::GET),
+            "TRACE" => Some(HttpMethod::GET),
+            "PATCH" => Some(HttpMethod::GET),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
