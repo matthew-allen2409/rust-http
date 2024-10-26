@@ -1,32 +1,21 @@
 use crate::request::{Request, RequestLine};
+use crate::response::Response;
 use crate::router::Router;
 use std::collections::BTreeMap;
 use std::io::{prelude::*, BufReader};
 use std::net::TcpStream;
 use std::sync::Arc;
 
-static ACCEPTED_ENCODINGS: [&str; 1] = ["gzip"];
+static SUPPORTED_ENCODINGS: [&str; 1] = ["gzip"];
 
 pub fn handle_connection<T>(mut stream: TcpStream, router: Arc<Router<T>>) {
     let mut buf_reader = BufReader::new(&mut stream);
 
     let request = parse_request(&mut buf_reader);
-    let accepted_encodings = request.headers.get("accept-encoding");
-
     let mut response = router.handle(&request);
-
-    match accepted_encodings {
-        Some(encodings) => {
-            if ACCEPTED_ENCODINGS.contains(&&**encodings) {
-                response.headers.insert("Content-Encoding".into(), encodings.clone());
-            }
-        },
-        None => ()
-    }
-
+    process_accepted_encodings(&request, &mut response);
 
     let response_string = response.to_string();
-
     stream.write(response_string.as_bytes()).unwrap();
 }
 
@@ -70,3 +59,19 @@ fn parse_request(buf_reader: &mut BufReader<&mut TcpStream>) -> Request {
     Request::new(request_line, headers, body)
 }
 
+fn process_accepted_encodings(request: &Request, response: &mut Response) {
+    let accepted_encodings = request.headers.get("accept-encoding");
+
+    match accepted_encodings {
+        Some(encodings) => {
+            encodings.split(',').map(str::trim).for_each(|encoding| {
+                if SUPPORTED_ENCODINGS.contains(&encoding) {
+                    response
+                        .headers
+                        .insert("Content-Encoding".into(), Box::from(encoding));
+                }
+            });
+        }
+        None => (),
+    }
+}
