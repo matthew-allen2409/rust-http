@@ -42,6 +42,14 @@ pub struct Header {
 }
 
 impl Header {
+    pub fn from_string(str: &String) -> Option<Header> {
+        let mut parts = str.split(':').map(|part| part.trim());
+        let name = Box::from(parts.next()?);
+        let value = Box::from(parts.next()?);
+
+        Some(Header::new(name, value))
+    }
+
     pub fn new(name: Box<str>, value: Box<str>) -> Self {
         Self { name, value }
     }
@@ -52,3 +60,22 @@ impl Header {
 }
 
 pub type Headers = BTreeMap<Box<str>, Box<str>>;
+
+#[cfg(test)]
+mod tests {
+    use super::Header;
+
+    #[test]
+    fn header_from_string_expect_header() {
+        let header_str = String::from("Content-Length: 69420");
+
+        let expected = Header {
+            name: Box::from("Content-Length"),
+            value: Box::from("69420"),
+        };
+
+        let result = Header::from_string(&header_str).unwrap();
+
+        assert_eq!(expected, result);
+    }
+}

@@ -4,7 +4,7 @@ use crate::HttpMethod;
 use std::collections::{BTreeMap, VecDeque};
 use std::sync::Arc;
 
-pub type Handler<T> = fn(Vec<String>, Request, &T) -> Response;
+pub type Handler<T> = fn(Vec<String>, &Request, &T) -> Response;
 
 #[derive(Debug, PartialEq)]
 pub struct PathNode<T> {
@@ -41,7 +41,7 @@ impl<T> PathNode<T> {
         child.add_route(method, path, handler);
     }
 
-    pub fn handle(&self, request: Request, state: &T) -> Response {
+    pub fn handle(&self, request: &Request, state: &T) -> Response {
         let path: VecDeque<String> = request
             .request_line
             .target
@@ -56,7 +56,7 @@ impl<T> PathNode<T> {
         &self,
         mut arg_acc: Vec<String>,
         mut path: VecDeque<String>,
-        request: Request,
+        request: &Request,
         state: &T,
     ) -> Response {
         let path_element = match path.pop_front() {
@@ -65,7 +65,7 @@ impl<T> PathNode<T> {
                 println!("Handlers: {:?}", &self.handlers);
                 println!("Request: {:?}", &request);
                 return match &self.handlers.get(&request.request_line.method) {
-                    Some(handler) => handler(arg_acc, request, state),
+                    Some(handler) => handler(arg_acc, &request, state),
                     None => handle_not_found(),
                 }
             }
@@ -93,7 +93,7 @@ fn handle_not_found() -> Response {
             status_code: 404,
             status_text: Box::from("Not Found"),
         },
-        headers: vec![],
+        headers: BTreeMap::new(),
         body: None,
     }
 }

@@ -31,7 +31,7 @@ impl<T> Router<T> {
         self
     }
 
-    pub fn handle(&self, request: Request) -> Response {
+    pub fn handle(&self, request: &Request) -> Response {
         self.routes.handle(request, &self.state)
     }
 }

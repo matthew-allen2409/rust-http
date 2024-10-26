@@ -41,7 +41,6 @@ fn main() {
         let router = Arc::clone(&router);
         thread::spawn(move || {
             let stream = stream.unwrap();
-            stream.set_nonblocking(true).unwrap();
             handle_connection(stream, router);
         });
     })
