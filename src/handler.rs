@@ -5,18 +5,19 @@ use std::collections::BTreeMap;
 use std::io::{prelude::*, BufReader};
 use std::net::TcpStream;
 use std::sync::Arc;
+use flate2::write::GzEncoder;
+use flate2::Compression;
 
 static SUPPORTED_ENCODINGS: [&str; 1] = ["gzip"];
 
-pub fn handle_connection<T>(mut stream: TcpStream, router: Arc<Router<T>>) {
-    let mut buf_reader = BufReader::new(&mut stream);
+pub fn handle_connection<T>(mut stream: TcpStream, router: Arc<Router<T>>) { let mut buf_reader = BufReader::new(&mut stream);
 
     let request = parse_request(&mut buf_reader);
     let mut response = router.handle(&request);
     process_accepted_encodings(&request, &mut response);
 
-    let response_string = response.to_string();
-    stream.write(response_string.as_bytes()).unwrap();
+    let response_bytes = response.to_bytes();
+    stream.write(&response_bytes).unwrap();
 }
 
 fn parse_request(buf_reader: &mut BufReader<&mut TcpStream>) -> Request {
@@ -64,14 +65,33 @@ fn process_accepted_encodings(request: &Request, response: &mut Response) {
 
     match accepted_encodings {
         Some(encodings) => {
-            encodings.split(',').map(str::trim).for_each(|encoding| {
+            for encoding in encodings.split(',').map(str::trim) {
                 if SUPPORTED_ENCODINGS.contains(&encoding) {
                     response
                         .headers
                         .insert("Content-Encoding".into(), Box::from(encoding));
+
+                    let body = match &response.body {
+                        Some(body) => body,
+                        None => break,
+                    };
+
+                    response.body = Some(encode_data(body));
+
+                    break;
                 }
-            });
+            }
         }
         None => (),
     }
+}
+
+fn encode_data(body: &Vec<u8>) -> Vec<u8> {
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+
+    encoder.write_all(&body).unwrap();
+
+    let encoded_string = encoder.finish().unwrap();
+
+    Vec::from(encoded_string)
 }

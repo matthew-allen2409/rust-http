@@ -13,7 +13,7 @@ pub fn handle_root(_: Vec<String>, _: &Request, _: &ApplicationState) -> Respons
 }
 
 pub fn handle_echo(mut args: Vec<String>, _: &Request, _: &ApplicationState) -> Response {
-    let body: Box<str> = Box::from(args.remove(0));
+    let body: Vec<u8> = Vec::from(args.remove(0).as_bytes());
 
     Response {
         status_line: StatusLine::new(200, Box::from("OK")),
@@ -29,8 +29,8 @@ pub fn handle_echo(mut args: Vec<String>, _: &Request, _: &ApplicationState) -> 
 }
 
 pub fn user_agent(_: Vec<String>, request: &Request, _: &ApplicationState) -> Response {
-    let body: Box<str> = match request.headers.get("user-agent") {
-        Some(user_agent) => user_agent.clone(),
+    let body: Vec<u8> = match request.headers.get("user-agent") {
+        Some(user_agent) => Vec::from(user_agent.as_bytes()),
         None => {
             return Response {
                 status_line: StatusLine::new(400, Box::from("Bad Request")),

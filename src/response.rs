@@ -4,11 +4,11 @@ use crate::Headers;
 pub struct Response {
     pub status_line: StatusLine,
     pub headers: Headers,
-    pub body: Option<Box<str>>,
+    pub body: Option<Vec<u8>>,
 }
 
 impl Response {
-    pub fn new(status_line: StatusLine, headers: Headers, body: Option<Box<str>>) -> Response {
+    pub fn new(status_line: StatusLine, headers: Headers, body: Option<Vec<u8>>) -> Response {
         Response {
             status_line,
             headers,
@@ -16,7 +16,7 @@ impl Response {
         }
     }
 
-    pub fn to_string(&self) -> String {
+    pub fn to_bytes(&self) -> Box<[u8]> {
         let status_line_string = self.status_line.to_string();
 
         let mut headers_string = String::new();
@@ -24,10 +24,14 @@ impl Response {
             headers_string.push_str(&format!("{key}: {value}\r\n"));
         });
 
+
+        let mut bytes: Vec<u8> = Vec::from(format!("{}{}\r\n", status_line_string, headers_string).as_bytes());
         match &self.body {
-            Some(body) => format!("{}{}\r\n{}", status_line_string, headers_string, body),
-            None => format!("{}{}\r\n", status_line_string, headers_string)
+            Some(body) => bytes.extend_from_slice(&body),
+            None => (),
         }
+
+       Box::from(bytes)
     }
 }
 

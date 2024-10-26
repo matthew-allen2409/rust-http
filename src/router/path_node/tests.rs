@@ -7,14 +7,14 @@ use std::collections::{BTreeMap, VecDeque};
 use std::sync::Arc;
 
 const DUMMY_HEADERS: Headers = Headers::new();
-fn dummy(_: Vec<String>, _: Request, _: &String) -> Response {
+fn dummy(_: Vec<String>, _: &Request, _: &String) -> Response {
     Response {
         status_line: StatusLine {
             version: Box::from("HTTP/1.1"),
             status_code: 200,
             status_text: Box::from("OK"),
         },
-        headers: vec![],
+        headers: BTreeMap::new(),
         body: None,
     }
 }
@@ -94,9 +94,9 @@ fn handle_root_inserted_expect_handler() {
         children: BTreeMap::new(),
         handlers: expected_handlers,
     };
-    let result = tree.handle(dummy_request("/"), &String::from("foo"));
+    let result = tree.handle(&dummy_request("/"), &String::from("foo"));
 
-    assert_eq!(dummy(vec![], dummy_request("/"), &String::from("foo")), result);
+    assert_eq!(dummy(vec![], &dummy_request("/"), &String::from("foo")), result);
 }
 
 #[test]
@@ -117,10 +117,10 @@ fn handle_path_inserted_expect_handler() {
         handlers: BTreeMap::new(),
     };
 
-    let result = tree.handle(dummy_request("/echo/hello"), &String::from("actual"));
+    let result = tree.handle(&dummy_request("/echo/hello"), &String::from("actual"));
     println!("tree: {:?}", tree);
     assert_eq!(
-        dummy(vec![], dummy_request("/echo/hello/"), &String::from("expected")),
+        dummy(vec![], &dummy_request("/echo/hello/"), &String::from("expected")),
         result
     );
 }
