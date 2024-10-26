@@ -29,7 +29,7 @@ pub fn handle_echo(mut args: Vec<String>, _: &Request, _: &ApplicationState) -> 
 }
 
 pub fn user_agent(_: Vec<String>, request: &Request, _: &ApplicationState) -> Response {
-    let body: Box<str> = match request.headers.get("user-ugent") {
+    let body: Box<str> = match request.headers.get("user-agent") {
         Some(user_agent) => user_agent.clone(),
         None => {
             return Response {
