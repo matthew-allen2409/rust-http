@@ -76,7 +76,11 @@ fn process_accepted_encodings(request: &Request, response: &mut Response) {
                         None => break,
                     };
 
-                    response.body = Some(encode_data(body));
+                    let encoded_body = encode_data(body);
+                    let content_len = encoded_body.len().to_string();
+                    response.body = Some(encoded_body);
+
+                    response.headers.insert(Box::from("Content-Length"), Box::from(content_len));
 
                     break;
                 }
